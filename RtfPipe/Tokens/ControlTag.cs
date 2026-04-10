@@ -1,7 +1,6 @@
 using System;
-using System.Collections.Generic;
-using System.Linq.Expressions;
 using System.Text;
+using RtfPipe.Tokens;
 
 namespace RtfPipe
 {
@@ -35,19 +34,28 @@ namespace RtfPipe
       return "\\" + Name;
     }
 
-    private static Dictionary<Type, Func<bool, ControlWord<bool>>> _factory = new Dictionary<Type, Func<bool, ControlWord<bool>>>();
-
     public static ControlWord<bool> Negate(ControlWord<bool> word)
     {
-      var type = word.GetType();
-      if (!_factory.TryGetValue(type, out var factory))
+      var value = !word.Value;
+      return word switch
       {
-        var ctor = type.GetConstructor(new[] { typeof(bool) });
-        var boolParam = Expression.Parameter(typeof(bool), "value");
-        factory = (Func<bool, ControlWord<bool>>)Expression.Lambda(Expression.Convert(Expression.New(ctor, boolParam), typeof(ControlWord<bool>)), boolParam).Compile();
-        _factory[type] = factory;
-      }
-      return factory(!word.Value);
+        IsBold _ => new IsBold(value),
+        IsAllCaps _ => new IsAllCaps(value),
+        IsEmbossed _ => new IsEmbossed(value),
+        IsEngraved _ => new IsEngraved(value),
+        IsItalic _ => new IsItalic(value),
+        IsHidden _ => new IsHidden(value),
+        IsOutlined _ => new IsOutlined(value),
+        IsShadow _ => new IsShadow(value),
+        IsSmallCaps _ => new IsSmallCaps(value),
+        IsDoubleStrike _ => new IsDoubleStrike(value),
+        IsStrikethrough _ => new IsStrikethrough(value),
+        IsUnderline _ => new IsUnderline(value),
+        HtmlRtf _ => new HtmlRtf(value),
+        FromHtml _ => new FromHtml(value),
+        RowAutoFit _ => new RowAutoFit(value),
+        _ => throw new NotSupportedException($"Unsupported negatable control word type '{word.GetType().FullName}'.")
+      };
     }
   }
 }
